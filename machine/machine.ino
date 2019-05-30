@@ -3,7 +3,7 @@
 #include "stdlib.h"
 
 #define PIN 8
-#define LEDS 7
+#define LEDS 30
 // 切换颜色
 #define KEY1 9
 // 切换闪烁方式
@@ -64,12 +64,12 @@ uint16_t cnt_color = 0;
 uint16_t timer_color = 0;
 uint16_t tmp_color = 0;
 void set_color() {
-  if (cnt_color < 8 && cnt_color != 0) {
+  if (cnt_color < 8) {
     for (uint8_t i=0; i<LEDS; i++) {
       colors[i].set(NCOLORS[cnt_color][0], NCOLORS[cnt_color][1], NCOLORS[cnt_color][2]);
     }
   }
-  if (cnt_color == 0) {
+  if (cnt_color == 8) {
     uint16_t target;
     if (tmp_color != NUM_COLOR)
       target = tmp_color + 1;
@@ -105,11 +105,95 @@ void set_color() {
 }
 
 //当前切换的闪烁模式
-uint16_t cnt_grey = 0;
+uint16_t cnt_grey = 4;
 uint16_t timer_grey = 0;
+uint16_t tmp_grey = 0;
+bool first_grey = true;
 void set_grey() {
-  for (uint8_t i=0; i<LEDS; i++) {
-    grey[i] = 255;
+  // 常亮
+  if (cnt_grey == 0) {
+    for (uint8_t i=0; i<LEDS; i++) {
+      grey[i] = 255;
+    }
+  }
+  // 闪烁
+  if (cnt_grey == 1) {
+    if (timer_grey >= 6) {
+      for (uint8_t i=0; i<LEDS; i++) {
+        if (tmp_grey == 0)
+          grey[i] = 255;
+        else
+          grey[i] = 0;
+      }
+      timer_grey = 0;
+      tmp_grey = !tmp_grey;
+    }
+    timer_grey++;
+  }
+  // 闪烁(fast)
+  if (cnt_grey == 2) {
+    if (timer_grey >= 1) {
+      for (uint8_t i=0; i<LEDS; i++) {
+        if (tmp_grey == 0)
+          grey[i] = 255;
+        else
+          grey[i] = 0;
+      }
+      timer_grey = 0;
+      tmp_grey = !tmp_grey;
+    }
+    timer_grey++;
+  }
+  // 流动
+  if (cnt_grey == 3) {
+    if (first_grey) {
+      for (uint8_t i=0; i<LEDS; i++) {
+//        grey[i] = 255;
+          if (i % 5 == 0)
+            grey[i] = 0;
+          else
+            grey[i] = 255;
+      }
+//      grey[0] = 0;
+      first_grey = false;
+    }
+    uint16_t tmp = grey[LEDS-1];
+    for (uint8_t i=LEDS-1; i>0; i--) {
+      grey[i] = grey[i-1];
+    }
+    grey[0] = tmp;
+  }
+  // 呼吸
+  if (cnt_grey == 4) {
+    if (first_grey) {
+      tmp_grey = 0;
+      timer_grey = 0;
+      for (uint8_t i=0; i<LEDS; i++) {
+        if (tmp_grey == 0)
+          grey[i] = 0;
+      }
+      first_grey = false;
+    }
+    if (tmp_grey == 0) {
+      if (timer_grey == 15) {
+        timer_grey = 15;
+        tmp_grey = !tmp_grey;
+      }
+      for (uint8_t i=0; i<LEDS; i++) {
+        grey[i] = 255 * timer_grey / 15;
+      }
+      timer_grey++;
+    }
+    if (tmp_grey != 0) {
+      if (timer_grey == 0) {
+        timer_grey = 0;
+        tmp_grey = !tmp_grey;
+      }
+      for (uint8_t i=0; i<LEDS; i++) {
+        grey[i] = 255 * timer_grey / 15;
+      }
+      timer_grey--;
+    }
   }
 }
 
